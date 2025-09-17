@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Secure Exam Portal</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    /* Top bar styling */
+    #top-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      background: #222;
+      color: #fff;
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      padding: 10px 20px;
+      z-index: 1000;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    #top-bar button {
+      margin-left: 10px;
+      padding: 8px 16px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 500;
+    }
+    #top-bar button:first-child {
+      background: #007bff;
+      color: #fff;
+    }
+    #top-bar button:last-child {
+      background: #dc3545;
+      color: #fff;
+    }
+
+    /* Adjust containers so they don't hide under top bar */
+    .container {
+      margin-top: 70px;
+    }
+
+    /* Styled question textarea */
+    #question-text {
+      width: 100%;
+      min-height: 120px;
+      padding: 12px 15px;
+      font-size: 16px;
+      line-height: 1.4;
+      border: 2px solid #007bff;
+      border-radius: 6px;
+      resize: vertical;
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
+      box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin-bottom: 20px;
+      color: #333;
+      outline: none;
+    }
+    #question-text:focus {
+      border-color: #0056b3;
+      box-shadow: 0 0 8px rgba(0, 123, 255, 0.5);
+    }
+    /* Styled submit button */
+    #question-form button[type='submit'] {
+      background: linear-gradient(90deg, #0069d9 0%, #0056b3 100%);
+      color: white;
+      font-size: 16px;
+      padding: 12px 30px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      box-shadow: 0 4px 8px rgba(0, 105, 217, 0.5);
+      transition: background 0.3s ease, box-shadow 0.3s ease;
+    }
+    #question-form button[type='submit']:hover {
+      background: linear-gradient(90deg, #0056b3 0%, #00408d 100%);
+      box-shadow: 0 6px 12px rgba(0, 80, 140, 0.7);
+    }
+    #question-form button[type='submit']:active {
+      background: #00408d;
+      box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.2);
+    }
+  </style>
+</head>
+<body>
+  <!-- Always visible top bar -->
+  <div id="top-bar">
+    <button onclick="showAdminLogin()">Admin Login</button>
+    <button onclick="electronAPI.quitApp()">Quit</button>
+  </div>
+
+  <div id="app">
+    <!-- Old landing screen hidden by default -->
+    <div id="login-screen" class="screen">
+      <div class="container">
+        <h1>Secure Exam Portal</h1>
+      </div>
+    </div>
+
+    <!-- Admin login -->
+    <div id="admin-login-screen" class="screen">
+      <div class="container">
+        <h2>Admin Login</h2>
+        <form id="admin-login-form">
+          <input type="text" id="admin-username" placeholder="Username" required />
+          <input type="password" id="admin-password" placeholder="Password" required />
+          <button type="submit" class="btn btn-primary">Login</button>
+          <button type="button" onclick="showUserLogin()" class="btn btn-secondary">Back</button>
+          <!-- <button type="button" onclick="showMainScreen()" class="btn btn-secondary">Back</button> -->
+        </form>
+      </div>
+    </div>
+
+    <!-- User login (default active) -->
+    <div id="user-login-screen" class="screen active">
+      <div class="container">
+        <h2>Join Exam Session</h2>
+        <form id="user-login-form">
+          <input type="text" id="user-name" placeholder="Full Name" required />
+          <input type="email" id="user-email" placeholder="Email" required />
+          <input type="tel" id="user-mobile" placeholder="Mobile Number" required pattern="[0-9]{10}" title="Please enter a valid 10-digit mobile number" />
+          <input type="text" id="session-code" placeholder="Session Code" required />
+         <div style="display:flex; justify-content:center; margin-top:15px;">
+          <button type="submit" class="btn btn-primary">Join Exam</button>
+         </div>
+          <!-- <button type="button" onclick="showMainScreen()" class="btn btn-secondary">Back</button> -->
+        </form>
+      </div>
+    </div>
+
+    <!-- Admin dashboard -->
+    <div id="admin-dashboard" class="screen">
+      <div class="container">
+        <h2>Admin Dashboard</h2>
+        <nav class="admin-nav">
+          <button onclick="showQuestions()" class="btn">Question Sets</button>
+          <button onclick="showSessions()" class="btn">Sessions</button>
+          <button onclick="showLiveFeed()" class="btn">Live Feed</button>
+          <button onclick="showReports()" class="btn">Reports</button>
+          <button onclick="logout()" class="btn btn-danger">Logout</button>
+        </nav>
+
+        <div id="admin-content">
+          <div id="questions-panel" class="panel">
+            <h3>Manage Questions</h3>
+            <form id="question-form">
+              <label for="question-text">Question Text:</label><br />
+              <textarea id="question-text" name="text" placeholder="Enter your question here..." required></textarea><br />
+
+              <label for="question-type">Question Type:</label><br />
+              <select id="question-type" name="type" onchange="toggleQuestionFields()" required>
+                <option value="mcq" selected>Multiple Choice</option>
+                <option value="code">Coding</option>
+              </select><br />
+
+              <div id="mcq-fields">
+                <input id="optionA" name="optionA" placeholder="Option A" required />
+                <input id="optionB" name="optionB" placeholder="Option B" required />
+                <input id="optionC" name="optionC" placeholder="Option C" required />
+                <input id="optionD" name="optionD" placeholder="Option D" required /><br />
+                <label for="correctAnswer">Correct Answer:</label>
+                <select id="correctAnswer" name="correctAnswer" required>
+                  <option value="A">A</option>
+                  <option value="B">B</option>
+                  <option value="C">C</option>
+                  <option value="D">D</option>
+                </select>
+              </div>
+
+              <div id="code-fields" style="display:none; margin-top:15px; padding:12px; border:2px solid #007bff; border-radius:6px; background-color:#f9faff; margin-bottom:8px;">
+                <label for="codingTemplate" style="font-weight:600; color:#0056b3; display:block; margin-bottom:6px; font-size:1rem;">
+                  Coding Template / Instructions:
+                </label><br />
+                <textarea id="codingTemplate" name="codingTemplate" placeholder="Enter starter code or instructions here..."
+                  style="width:100%; min-height:140px; padding:12px 15px; font-family:'Courier New', Courier, monospace; font-size:14px; border:2px solid #007bff; border-radius:6px; resize:vertical; box-shadow: inset 0 1px 3px rgba(0,0,0,0.1); transition: border-color 0.3s ease; color:#333;"
+                  onfocus="this.style.borderColor='#0056b3'; this.style.boxShadow='0 0 8px rgba(0, 123, 255, 0.5)';"
+                  onblur="this.style.borderColor='#007bff'; this.style.boxShadow='inset 0 1px 3px rgba(0,0,0,0.1)';"
+                  ></textarea>
+              </div>
+
+              <button type="submit">Create Question</button>
+            </form>
+
+            <script>
+              function toggleQuestionFields() {
+                var type = document.getElementById('question-type').value;
+                const mcqFields = document.getElementById('mcq-fields');
+                const codeFields = document.getElementById('code-fields');
+
+                if (type === 'mcq') {
+                  mcqFields.style.display = 'block';
+                  codeFields.style.display = 'none';
+                  document.querySelectorAll('#mcq-fields input, #mcq-fields select')
+                    .forEach(el => (el.required = true));
+                  document.getElementById('codingTemplate').required = false;
+                } else if (type === 'code') {
+                  mcqFields.style.display = 'none';
+                  codeFields.style.display = 'block';
+                  document.querySelectorAll('#mcq-fields input, #mcq-fields select')
+                    .forEach(el => (el.required = false));
+                  document.getElementById('codingTemplate').required = true;
+                }
+              }
+              window.addEventListener('DOMContentLoaded', toggleQuestionFields);
+            </script>
+
+            <div id="questions-list"></div>
+          </div>
+
+          <div id="sessions-panel" class="panel hidden">
+            <h3>Manage Sessions</h3>
+            <form id="session-form">
+              <input id="session-name" type="text" placeholder="Session Name" required />
+              <input id="session-start" type="datetime-local" required />
+              <input id="session-duration" type="number" placeholder="Duration (minutes)" required />
+              <label for="session-questions">Attach Questions:</label><br />
+               <div class="dropdown-multiselect">
+                 <button type="button" id="dropdown-btn" class="dropdown-btn">
+                  Select Questions ▼
+                 </button>
+                 <div id="dropdown-list" class="dropdown-list hidden">
+                  <!-- Dynamically loaded checkbox items go here -->
+                 </div>
+              </div>
+              <button type="submit" class="btn btn-primary">Create Session</button>
+            </form>
+            <div id="sessions-list"></div>
+          </div>
+
+          <div id="live-feed-panel" class="panel hidden">
+            <h3>Live User Feed</h3>
+            <div id="video-feeds"></div>
+          </div>
+
+          <div id="reports-panel" class="panel hidden">
+            <h3>Exam Reports</h3>
+            <div id="reports-list"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Exam screen -->
+    <div id="exam-screen" class="screen">
+      <div class="container">
+        <div id="exam-header">
+          <h2 id="exam-title">Exam in Progress</h2>
+          <div id="exam-timer">00:00</div>
+        </div>
+
+        <div id="question-container">
+          <div id="current-question"></div>
+          <div id="options-container"></div>
+        </div>
+
+        <div id="exam-controls">
+          <button onclick="previousQuestion()" class="btn">Previous</button>
+          <button onclick="nextQuestion()" class="btn">Next</button>
+          <button onclick="submitExam()" class="btn btn-danger">Submit Exam</button>
+        </div>
+
+        <video id="user-camera" autoplay muted></video>
+      </div>
+    </div>
+  </div>
+
+  <!-- Custom alert -->
+  <div id="custom-alert" style="
+    display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+    background:rgba(0,0,0,0.6); justify-content:center; align-items:center;
+    z-index:9999;">
+    <div style="background:#fff; padding:20px; border-radius:8px; width:350px; text-align:center;">
+      <h3 id="alert-message" style="margin-bottom:20px; font-size:16px; color:#333;"></h3>
+      <button id="alert-ok-btn" style="padding:8px 20px; background:#007bff; color:#fff;
+        border:none; border-radius:4px; cursor:pointer;">OK</button>
+    </div>
+  </div>
+
+  <!-- Custom confirm -->
+  <div id="custom-confirm" style="
+    display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+    background:rgba(0,0,0,0.6); justify-content:center; align-items:center;
+    z-index:9999;">
+    <div style="background:#fff; padding:20px; border-radius:8px; width:350px; text-align:center;">
+      <h3 id="confirm-message" style="margin-bottom:20px; font-size:16px; color:#333;"></h3>
+      <button id="confirm-yes" style="padding:8px 20px; background:#28a745; color:#fff;
+        border:none; border-radius:4px; cursor:pointer; margin-right:10px;">Yes</button>
+      <button id="confirm-no" style="padding:8px 20px; background:#dc3545; color:#fff;
+        border:none; border-radius:4px; cursor:pointer;">No</button>
+    </div>
+  </div>
+
+  <!-- Exam instructions modal -->
+  <div id="exam-instructions-modal" style="
+    display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+    background:rgba(0,0,0,0.65); justify-content:center; align-items:center;
+    z-index:9999; font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+    <div style="
+      background:#f9faff;
+      padding:24px;
+      border-radius:10px;
+      width:520px;
+      max-height:80%;
+      overflow-y:auto;
+      box-shadow:0 4px 12px rgba(0,0,0,0.2);
+      border-left:5px solid #3e6fd1;
+      text-align:left;">
+      <h2 style="
+        margin-top:0;
+        margin-bottom:12px;
+        font-size:20px;
+        font-weight:600;
+        color:#3e6fd1;">
+        Exam Instructions
+      </h2>
+      <ol id="exam-instructions-text" style="
+        font-size:15px;
+        line-height:1.6;
+        color:#333;
+        margin-bottom:20px;
+        padding-left:20px;">
+        <li>Do not switch applications or minimize the window</li>
+        <li>Do not exit fullscreen mode</li>
+        <li>Your camera will be monitored throughout the exam</li>
+        <li>Answer all questions before submitting</li>
+        <li>You cannot go back after submission</li>
+        <li>The exam will auto-submit when time expires</li>
+      </ol>
+      <div style="text-align:right;">
+        <button id="exam-start-btn" style="
+          padding:10px 24px;
+          background:#3e6fd1;
+          color:#fff;
+          font-size:15px;
+          font-weight:500;
+          border:none;
+          border-radius:6px;
+          cursor:pointer;
+          box-shadow:0 2px 6px rgba(0,0,0,0.15);">
+          Start Exam
+        </button>
+        <button id="exam-cancel-btn" style="
+          padding:10px 24px;
+          background:#aaa;
+          color:#fff;
+          font-size:15px;
+          font-weight:500;
+          border:none;
+          border-radius:6px;
+          cursor:pointer;
+          margin-left:12px;
+          box-shadow:0 2px 6px rgba(0,0,0,0.15);">
+          Cancel
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById("user-login-form").addEventListener("submit", function (e) {
+      const mobile = document.getElementById("user-mobile").value;
+      const mobileRegex = /^[0-9]{10}$/;
+      if (!mobileRegex.test(mobile)) {
+        e.preventDefault();
+        alert("Please enter a valid 10-digit mobile number.");
+        return false;
+      }
+    });
+  </script>
+
+  <script>
+  function showUserLogin() {
+    document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+    document.getElementById("user-login-screen").classList.add("active");
+  }
+</script>
+
+  <script src="https://cdn.socket.io/4.7.0/socket.io.min.js"></script>
+  <script src="app.js"></script>
+  <script src="admin.js"></script>
+  <script src="user.js"></script>
+</body>
+</html>
