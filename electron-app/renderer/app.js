@@ -41,7 +41,7 @@ function logout() {
     currentUser = null;
     currentSession = null;
     electronAPI.disableSecureMode();
-    showMainScreen();
+    showUserLogin();
 }
 
 // API helper functions
