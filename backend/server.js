@@ -15,15 +15,16 @@ const server = http.createServer(app);
 
 // Enhanced CORS configuration with allowed origins
 const corsOptions = {
-    origin: [
-        'http://localhost:3000',
-        'http://localhost:8080',
-        'file://',
-        'capacitor://localhost',
-        'ionic://localhost',
-        'http://localhost',
-        'http://localhost:8100'
-    ],
+    // origin: [
+    //     'http://localhost:3000',
+    //     'http://localhost:8080',
+    //     'file://',
+    //     'capacitor://localhost',
+    //     'ionic://localhost',
+    //     'http://localhost',
+    //     'http://localhost:8100'
+    // ],
+    origin: '*',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
     credentials: true,
