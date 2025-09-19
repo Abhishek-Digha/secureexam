@@ -1,7 +1,7 @@
  
-const API_BASE = 'http://localhost:5000/api';
+const API_BASE = 'https://secureexam.onrender.com/api';
 //const socket = io('http://localhost:5000');
-const socket = io("http://localhost:5000", {
+const socket = io("https://secureexam.onrender.com", {
   transports: ["websocket", "polling"]
 });
 let currentUser = null;
