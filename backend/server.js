@@ -124,6 +124,11 @@ io.on('connection', (socket) => {
         console.log(`Admin socket ${socket.id} joined admin-room`);
     });
 
+     socket.on('userTypedLog', (data) => {
+    // Broadcast typed logs to admin room
+    io.to('admin-room').emit('user_typed_log', data);
+    });
+
     socket.on('joinSession', (data) => {
         socket.join(data.sessionId);
         connectedUsers.set(socket.id, {

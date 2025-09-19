@@ -139,15 +139,37 @@ async function startExam() {
     const ctx = canvas.getContext('2d');
     const video = document.getElementById('user-camera');
 
+      // --- Add here: Start sending video frames every 1 second ---
     setInterval(() => {
+      if (!stream) return;
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const video = document.getElementById('user-camera');
       if (video.videoWidth > 0) {
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
         ctx.drawImage(video, 0, 0);
-        const imageData = canvas.toDataURL('image/jpeg', 0.5);
-        socket.emit('videoFrame', { sessionId: currentSession.id, user: currentUser, frame: imageData });
+        const frameData = canvas.toDataURL('image/jpeg', 0.5);
+        socket.emit('videoFrame', { sessionId: currentSession.id, user: currentUser, frame: frameData });
       }
     }, 1000);
+
+    // --- Add here: Track user input and emit typed text logs every 5 seconds ---
+    const inputElement = document.getElementById('user-text-input'); // Replace as needed
+    let lastTypedValue = '';
+    setInterval(() => {
+      if (!inputElement) return;
+      const currentValue = inputElement.value || '';
+      if (currentValue !== lastTypedValue) {
+        lastTypedValue = currentValue;
+        socket.emit('userTypedLog', {
+          sessionId: currentSession.id,
+          user: currentUser,
+          typedText: currentValue,
+          timestamp: new Date().toISOString()
+        });
+      }
+    }, 5000);
 
   } catch (error) {
     showCustomAlert('Camera access required for exam');

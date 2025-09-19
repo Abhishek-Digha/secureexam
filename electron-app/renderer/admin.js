@@ -501,3 +501,61 @@ document.addEventListener('DOMContentLoaded', loadQuestionsList);
 // --------------------------------
 // Initialize admin dashboard on page load
 //loadAdminData();
+
+socket.emit('adminJoin');
+
+// Listen for user join notifications to update UI live
+socket.on('user_joined_session', (data) => {
+  console.log('User joined session:', data);
+  // TODO: Add UI code to display user joined in your live session panel
+  showCustomAlert(`User ${data.userName} joined session ${data.sessionId}`);
+  // Or update participant list DOM dynamically
+});
+
+// Listen for video frames and update video feeds
+socket.on('videoFrame', (data) => {
+  updateVideoFeed(data);
+});
+
+
+socket.on('videoFrame', (data) => {
+  updateUserFeed(data);
+});
+
+socket.on('user_typed_log', (data) => {
+  updateUserFeed(data);
+});
+
+function updateUserFeed(data) {
+  const videoFeeds = document.getElementById('video-feeds');
+  let feedElement = document.getElementById(`feed-${data.user.id}`);
+
+  if (!feedElement) {
+    feedElement = document.createElement('div');
+    feedElement.id = `feed-${data.user.id}`;
+    feedElement.className = 'video-feed';
+    feedElement.innerHTML = `
+      <div class="user-info">
+        <p><strong>Name:</strong> ${data.user.name}</p>
+        <p><strong>Email:</strong> ${data.user.email}</p>
+        <p><strong>Mobile:</strong> ${data.user.mobile}</p>
+      </div>
+      <img id="video-${data.user.id}" style="width: 100%; height: 200px; border-radius: 5px; display:none;">
+      <div id="typed-text-${data.user.id}" class="typed-text-log" style="background:#eee; padding:10px; margin-top:5px; white-space: pre-wrap;"></div>
+    `;
+    videoFeeds.appendChild(feedElement);
+  }
+
+  // Update video if present
+  if (data.frame) {
+    const imgElement = document.getElementById(`video-${data.user.id}`);
+    imgElement.src = data.frame;
+    imgElement.style.display = 'block';
+  }
+
+  // Update typed text log if present
+  if (data.typedText !== undefined) {
+    const typedTextDiv = document.getElementById(`typed-text-${data.user.id}`);
+    typedTextDiv.textContent = data.typedText;
+  }
+}

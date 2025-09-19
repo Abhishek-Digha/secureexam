@@ -330,3 +330,20 @@ input, select {
   width: 16px;
   height: 16px;
 }
+
+
+.video-feed {
+  border: 1px solid #ddd;
+  padding: 10px;
+  margin-bottom: 15px;
+  border-radius: 5px;
+  max-width: 300px;
+}
+
+.typed-text-log {
+  font-family: monospace;
+  font-size: 14px;
+  color: #333;
+  max-height: 150px;
+  overflow-y: auto;
+}
