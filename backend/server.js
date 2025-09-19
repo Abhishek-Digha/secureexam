@@ -118,6 +118,12 @@ const connectedUsers = new Map();
 io.on('connection', (socket) => {
     console.log('User connected:', socket.id);
 
+    // Admin joins admin room (call this from admin clients after connect)
+    socket.on('adminJoin', () => {
+        socket.join('admin-room');
+        console.log(`Admin socket ${socket.id} joined admin-room`);
+    });
+
     socket.on('joinSession', (data) => {
         socket.join(data.sessionId);
         connectedUsers.set(socket.id, {
@@ -128,6 +134,15 @@ io.on('connection', (socket) => {
         // Notify others in session
         socket.to(data.sessionId).emit('userJoined', data.user);
         console.log('User joined session:', data.user.name);
+
+        // Notify admin room about user join
+        io.to('admin-room').emit('user_joined_session', {
+            sessionId: data.sessionId,
+            userId: data.user.id,
+            userName: data.user.name,
+            userEmail: data.user.email,
+            joinedAt: new Date().toISOString()
+        });
     });
 
     socket.on('videoFrame', (data) => {
@@ -135,23 +150,27 @@ io.on('connection', (socket) => {
         socket.to(data.sessionId).emit('videoFrame', data);
     });
 
-    // New: Handle exam submission event to terminate the session for that user
+    // Handle exam submission event to terminate the session for that user
     socket.on('submitExam', (sessionId) => {
         // Notify all in session that exam is terminated (user submitted)
         io.to(sessionId).emit('examTerminated');
-
-        // Optionally: log or update DB here that session ended for user
         console.log(`Exam submitted and session terminated for session: ${sessionId}`);
     });
 
-    // New: Handle exam time expired event to automatically terminate session
+    // Handle exam time expired event to automatically terminate session
     socket.on('examTimeExpired', (sessionId) => {
         io.to(sessionId).emit('examTerminated');
         console.log(`Exam time expired, session terminated for session: ${sessionId}`);
     });
 
+    // Handle admin manual session termination with broadcast of session_terminated event for user clients
     socket.on('terminateSession', (sessionId) => {
+        // Emit examTerminated for any cleanup UI
         io.to(sessionId).emit('examTerminated');
+
+        // Emit session_terminated event for forced client termination as per new feature
+        io.to(sessionId).emit('session_terminated', { sessionId });
+
         console.log(`Session manually terminated: ${sessionId}`);
     });
 
