@@ -313,8 +313,10 @@ async function terminateSession(sessionId) {
     const response = await apiCall(`/admin/sessions/${sessionId}/terminate`, 'POST');
     console.log('Terminate session response:', response);
     if (response.success) {
+      socket.emit('terminateSession', sessionId);
       await loadSessions();
       showCustomAlert('Session terminated.');
+
     } else {
       showCustomAlert('Failed to terminate session: ' + (response.message || 'Unknown error'));
     }

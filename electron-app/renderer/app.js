@@ -108,49 +108,63 @@ document.getElementById('user-login-form').addEventListener('submit', async (e) 
 });
 
 async function startExam() {
-    await electronAPI.enableSecureMode();
-    
-    hideAllScreens();
-    document.getElementById('exam-screen').classList.add('active');
-    
-    // Start camera for live feed
-    try {
-        stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-        document.getElementById('user-camera').srcObject = stream;
-        
-        // Send video stream to admin
-        socket.emit('joinSession', { sessionId: currentSession.id, user: currentUser });
-        
-        // Setup video streaming (simplified WebRTC would be better)
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        const video = document.getElementById('user-camera');
-        
-        setInterval(() => {
-            if (video.videoWidth > 0) {
-                canvas.width = video.videoWidth;
-                canvas.height = video.videoHeight;
-                ctx.drawImage(video, 0, 0);
-                const imageData = canvas.toDataURL('image/jpeg', 0.5);
-                socket.emit('videoFrame', { sessionId: currentSession.id, user: currentUser, frame: imageData });
-            }
-        }, 1000); // Send frame every second
-        
-    } catch (error) {
-        showCustomAlert('Camera access required for exam');
-        return;
-    }
-    
-    // Load questions
-    const response = await apiCall(`/user/questions/${currentSession.id}`);
-    questions = response.questions;
-    
-    // Start timer
-    startExamTimer(currentSession.duration);
-    
-    // Display first question
-    displayQuestion();
+  await electronAPI.enableSecureMode();
+
+  hideAllScreens();
+  document.getElementById('exam-screen').classList.add('active');
+
+  // Start camera for live feed
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+    document.getElementById('user-camera').srcObject = stream;
+
+    // Send join session event (added room join on server side)
+    socket.emit('joinSession', { sessionId: currentSession.id, user: currentUser });
+
+    // Add listener for forced session termination from server
+    socket.on('session_terminated', (data) => {
+      if (data.sessionId === currentSession.id) {
+        showCustomAlert('Your exam session was terminated by the administrator.');
+        // Clean up user side and stop exam
+        if (stream) {
+          stream.getTracks().forEach(track => track.stop());
+        }
+        socket.disconnect();
+        //window.location.href = '/session-terminated.html'; // Or custom cleanup
+      }
+    });
+
+    // Setup video streaming frames
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const video = document.getElementById('user-camera');
+
+    setInterval(() => {
+      if (video.videoWidth > 0) {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        ctx.drawImage(video, 0, 0);
+        const imageData = canvas.toDataURL('image/jpeg', 0.5);
+        socket.emit('videoFrame', { sessionId: currentSession.id, user: currentUser, frame: imageData });
+      }
+    }, 1000);
+
+  } catch (error) {
+    showCustomAlert('Camera access required for exam');
+    return;
+  }
+
+  // Load questions
+  const response = await apiCall(`/user/questions/${currentSession.id}`);
+  questions = response.questions;
+
+  // Start timer
+  startExamTimer(currentSession.duration);
+
+  // Display first question
+  displayQuestion();
 }
+
 
 function displayQuestion() {
   if (currentQuestionIndex >= questions.length) return;
@@ -366,7 +380,7 @@ function startExamTimer(duration) {
         
         if (timeLeft <= 0) {
             clearInterval(examTimer);
-            submitExam();  // Call submitExam on timeout
+            autoSubmitExam();  // Call submitExam on timeout
             // Emit to server to terminate the session
             socket.emit('examTimeExpired', currentSession.id);
         }
@@ -401,15 +415,51 @@ async function submitExam() {
       }
 
       showCustomAlert('Exam submitted successfully!');
-      showMainScreen();
       await electronAPI.disableSecureMode();
+      showUserLogin();
+      electronAPI.quitApp();
 
     } catch (error) {
       showCustomAlert('Failed to submit exam');
       console.error(error);
+      showUserLogin();
+      electronAPI.quitApp();
     }
   }
 }
+
+async function autoSubmitExam() {
+  if (examTimer) clearInterval(examTimer); 
+    try {
+      await apiCall('/user/submit-exam', 'POST', {
+        sessionId: currentSession.id,
+        userId: currentUser.id,
+        // Convert userAnswers object to array for backend
+        answers: Object.entries(userAnswers).map(([questionId, ans]) => ({
+          questionId,
+          type: ans.type,
+          selectedAnswer: ans.type === 'mcq' ? ans.value : null,
+          codeAnswer: ans.type === 'code' ? ans.value : null
+        }))
+      });
+
+      // Stop camera stream if running
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+
+      showCustomAlert('Exam submitted successfully!');
+      await electronAPI.disableSecureMode();
+      showUserLogin();
+      electronAPI.quitApp();
+
+    } catch (error) {
+      showCustomAlert('Failed to submit exam');
+      console.error(error);
+      showUserLogin();
+      electronAPI.quitApp();
+    }
+  }
 
 
 
@@ -419,6 +469,15 @@ socket.on('connect', () => {
 });
 
 socket.on('examTerminated', () => {
-    showCustomAlert('Exam has been terminated by administrator');
-    electronAPI.quitApp();
+    showUserLogin();
+    showCustomAlert('Exam has been terminated by administrator (Exam Timeout or Unfair means during exam)');
+    //electronAPI.quitApp();
+});
+
+socket.on('session_terminated', (data) => {
+    if (data.sessionId === currentSession.id) {
+      showUserLogin();
+      showCustomAlert('Your exam session has been terminated by the administrator.');
+  // Additional cleanup: stop timers, disconnect socket, redirect, etc.
+    }
 });
