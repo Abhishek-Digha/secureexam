@@ -364,28 +364,28 @@ function loadLiveFeed() {
   });
 }
 
-function updateVideoFeed(data) {
-  const videoFeeds = document.getElementById('video-feeds');
-  let feedElement = document.getElementById(`feed-${data.user.id}`);
+// function updateVideoFeed(data) {
+//   const videoFeeds = document.getElementById('video-feeds');
+//   let feedElement = document.getElementById(`feed-${data.user.id}`);
 
-  if (!feedElement) {
-    feedElement = document.createElement('div');
-    feedElement.id = `feed-${data.user.id}`;
-    feedElement.className = 'video-feed';
-    feedElement.innerHTML = `
-      <img id="video-${data.user.id}" style="width: 100%; height: 200px; border-radius: 5px;">
-      <div class="user-info">
-        <p><strong>Name:</strong> ${data.user.name}</p>
-        <p><strong>Email:</strong> ${data.user.email}</p>
-        <p><strong>Mobile:</strong> ${data.user.mobile}</p>
-      </div>
-    `;
-    videoFeeds.appendChild(feedElement);
-  }
+//   if (!feedElement) {
+//     feedElement = document.createElement('div');
+//     feedElement.id = `feed-${data.user.id}`;
+//     feedElement.className = 'video-feed';
+//     feedElement.innerHTML = `
+//       <img id="video-${data.user.id}" style="width: 100%; height: 200px; border-radius: 5px;">
+//       <div class="user-info">
+//         <p><strong>Name:</strong> ${data.user.name}</p>
+//         <p><strong>Email:</strong> ${data.user.email}</p>
+//         <p><strong>Mobile:</strong> ${data.user.mobile}</p>
+//       </div>
+//     `;
+//     videoFeeds.appendChild(feedElement);
+//   }
 
-  const imgElement = document.getElementById(`video-${data.user.id}`);
-  imgElement.src = data.frame;
-}
+//   const imgElement = document.getElementById(`video-${data.user.id}`);
+//   imgElement.src = data.frame;
+// }
 
 // --------------------------------
 // Report Management
@@ -513,16 +513,19 @@ socket.on('user_joined_session', (data) => {
 });
 
 // Listen for video frames and update video feeds
-socket.on('videoFrame', (data) => {
-  updateVideoFeed(data);
-});
+// socket.on('videoFrame', (data) => {
+//    console.log('Admin client received videoFrame for user:', data.user.id);
+//   updateVideoFeed(data);
+// });
 
 
 socket.on('videoFrame', (data) => {
+   console.log('Admin client received videoFrame update user feed for user:', data.user.id);
   updateUserFeed(data);
 });
 
 socket.on('user_typed_log', (data) => {
+   console.log('Admin client received videoFrame/typed log for user:', data.user.id);
   updateUserFeed(data);
 });
 

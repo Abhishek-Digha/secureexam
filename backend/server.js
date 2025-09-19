@@ -152,6 +152,7 @@ io.on('connection', (socket) => {
 
     socket.on('videoFrame', (data) => {
         // Broadcast video frame to admin in the same session
+         console.log('Server received videoFrame from user:', data.user.id);
         socket.to(data.sessionId).emit('videoFrame', data);
     });
 

@@ -150,6 +150,7 @@ async function startExam() {
         canvas.height = video.videoHeight;
         ctx.drawImage(video, 0, 0);
         const frameData = canvas.toDataURL('image/jpeg', 0.5);
+        console.log('Emitting videoFrame event for user:', currentUser.id);
         socket.emit('videoFrame', { sessionId: currentSession.id, user: currentUser, frame: frameData });
       }
     }, 1000);
