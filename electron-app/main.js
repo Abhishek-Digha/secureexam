@@ -36,16 +36,16 @@ function createWindow() {
     mainWindow.show();
   });
 
-  mainWindow.on('closed', () => {
-    mainWindow = null;
+   mainWindow.on('blur', () => {
+    if (isExamMode) {
+      console.log('Window lost focus');
+      dialog.showErrorBox('Exam Terminated', 'Exam has been terminated due to security violation.');
+      app.quit();
+    }
   });
 
-  let win = new BrowserWindow({ /* options */ });
-
-  win.on('blur', () => {
-    console.log('Window lost focus');
-     dialog.showErrorBox('Exam Terminated', 'Exam has been terminated due to security violation.');
-     app.quit();
+  mainWindow.on('closed', () => {
+    mainWindow = null;
   });
 
   // Prevent new windows

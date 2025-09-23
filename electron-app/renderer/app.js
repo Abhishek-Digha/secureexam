@@ -538,26 +538,23 @@ socket.on('session_terminated', (data) => {
   }
 });
 
-
 document.getElementById('quit-btn').addEventListener('click', async () => {
-
-  if (currentUser.role !== 'user') {
-    // For admins, just quit without terminating any session
+  if (!currentUser || currentUser.role !== 'user') {
+    // If no currentUser or not user role, quit app directly
     electronAPI.quitApp();
     return;
   }
 
   try {
-    // Call your backend API to terminate the session (adjust URL & sessionId)
     await fetch(`/api/sessions/${currentSession.id}/terminate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' }
     });
-
-    // Now quit the Electron app via preload API
-    electronAPI.quitApp();
   } catch (err) {
     console.error('Failed to terminate session:', err);
     alert('Failed to terminate exam session. Please try again.');
+  } finally {
+    electronAPI.quitApp();
   }
 });
+
