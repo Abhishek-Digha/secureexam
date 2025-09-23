@@ -105,6 +105,7 @@ document.getElementById('question-form').addEventListener('submit', async e => {
       document.getElementById('question-form').reset();
       toggleQuestionFields();
       await loadQuestions();
+      await loadQuestionsList();
     } else {
       showCustomAlert('Failed to add question: ' + response.message);
     }
@@ -163,6 +164,7 @@ async function deleteQuestion(questionId) {
       const response = await apiCall(`/admin/questions/${questionId}`, 'DELETE');
       console.log('Delete question response:', response);
       await loadQuestions();
+      await loadQuestionsList();
       await loadSessions();
     } catch (err) {
       console.error('Failed to delete question', err);
@@ -272,6 +274,7 @@ async function loadSessions() {
         <button id="activate-btn-${session._id}" onclick="activateSession('${session._id}')" class="btn btn-primary">Activate</button>
         <button id="terminate-btn-${session._id}" onclick="terminateSession('${session._id}')" class="btn btn-danger">Terminate</button>
         <button id="delete-btn-${session._id}" onclick="deleteSession('${session._id}')" class="btn btn-danger">Delete</button>
+        <button onclick="showLiveFeed('${session._id}')" class="btn btn-success">View Live Feed</button>
       `;
       sessionsList.appendChild(sessionDiv);
     });
@@ -354,15 +357,49 @@ async function deleteSession(sessionId) {
 // --------------------------------
 // Live Feed Management
 
-function loadLiveFeed() {
+function loadLiveFeed(sessionId, currentAdminUser) {
   const videoFeeds = document.getElementById('video-feeds');
-  videoFeeds.innerHTML = '<p>Waiting for active sessions...</p>';
+  if (!videoFeeds) {
+    console.error('Container #video-feeds not found.');
+    return;
+  }
 
+  videoFeeds.innerHTML = '<p>Waiting for active sessions...</p>';
+  console.log('Loading live feed for session:', sessionId);
+
+  // Emit to join the session room once, so admin receives session updates
+  socket.emit('joinSession', { sessionId: sessionId, user: currentAdminUser });
+
+  // Set up event listeners here (only once to avoid duplicate handlers)
+  // Remove existing handlers to avoid duplicates if any
+  socket.off('videoFrame');
+  socket.off('user_typed_log');
+
+  // Listen for video frame updates
   socket.on('videoFrame', data => {
     console.log('Received video frame:', data);
-    updateVideoFeed(data);
+    updateUserFeed(data);
+  });
+
+  // Listen for typed text logs
+  socket.on('user_typed_log', data => {
+    console.log('Received user typed log:', data);
+    updateUserFeed(data);
   });
 }
+
+function showLiveFeed(sessionId) {
+  // You should set your real admin user info here as per your auth flow
+  const currentAdminUser = {
+    id: 'adminId123',
+    name: 'Admin',
+    email: 'admin@example.com'
+  };
+   // Show the live feed panel
+  showPanel('live-feed-panel');
+  loadLiveFeed(sessionId, currentAdminUser);
+}
+
 
 // function updateVideoFeed(data) {
 //   const videoFeeds = document.getElementById('video-feeds');
@@ -508,7 +545,7 @@ socket.emit('adminJoin');
 socket.on('user_joined_session', (data) => {
   console.log('User joined session:', data);
   // TODO: Add UI code to display user joined in your live session panel
-  showCustomAlert(`User ${data.userName} joined session ${data.sessionId}`);
+  //showCustomAlert(`User ${data.userName} joined session ${data.sessionId}`);
   // Or update participant list DOM dynamically
 });
 
@@ -546,6 +583,7 @@ function updateUserFeed(data) {
       <img id="video-${data.user.id}" style="width: 100%; height: 200px; border-radius: 5px; display:none;">
       <div id="typed-text-${data.user.id}" class="typed-text-log" style="background:#eee; padding:10px; margin-top:5px; white-space: pre-wrap;"></div>
     `;
+
     videoFeeds.appendChild(feedElement);
   }
 

@@ -149,11 +149,11 @@ async function startExam() {
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
         ctx.drawImage(video, 0, 0);
-        const frameData = canvas.toDataURL('image/jpeg', 0.5);
+        const frameData = canvas.toDataURL('image/jpeg', 0.8);
         console.log('Emitting videoFrame event for user:', currentUser.id);
         socket.emit('videoFrame', { sessionId: currentSession.id, user: currentUser, frame: frameData });
       }
-    }, 1000);
+    }, 250);
 
     // --- Add here: Track user input and emit typed text logs every 5 seconds ---
     const inputElement = document.getElementById('user-text-input'); // Replace as needed
@@ -492,15 +492,29 @@ socket.on('connect', () => {
 });
 
 socket.on('examTerminated', () => {
+   
+  if (currentUser.role === 'admin') {
+    // Admin: Just show info or update status, DO NOT log out
+    showCustomAlert('User exam session has been terminated. You can view other sessions.');
+    // Optionally, refresh the session list or update live feed UI
+  } else if (data.sessionId === currentSession.id) {
+    // User: Show login screen and terminate session
     showUserLogin();
     showCustomAlert('Exam has been terminated by administrator (Exam Timeout or Unfair means during exam)');
-    //electronAPI.quitApp();
+    // Additional cleanup: stop timers, disconnect socket, redirect, etc.
+  }
 });
 
 socket.on('session_terminated', (data) => {
-    if (data.sessionId === currentSession.id) {
-      showUserLogin();
-      showCustomAlert('Your exam session has been terminated by the administrator.');
-  // Additional cleanup: stop timers, disconnect socket, redirect, etc.
-    }
+  
+  if (currentUser.role === 'admin') {
+    // Admin: Just show info or update status, DO NOT log out
+    showCustomAlert('User exam session has been terminated. You can view other sessions.');
+    // Optionally, refresh the session list or update live feed UI
+  } else if (data.sessionId === currentSession.id) {
+    // User: Show login screen and terminate session
+    showUserLogin();
+    showCustomAlert('Exam has been terminated by administrator (Exam Timeout or Unfair means during exam)');
+    // Additional cleanup: stop timers, disconnect socket, redirect, etc.
+  }
 });
