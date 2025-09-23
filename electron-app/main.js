@@ -40,6 +40,14 @@ function createWindow() {
     mainWindow = null;
   });
 
+  let win = new BrowserWindow({ /* options */ });
+
+  win.on('blur', () => {
+    console.log('Window lost focus');
+     dialog.showErrorBox('Exam Terminated', 'Exam has been terminated due to security violation.');
+     app.quit();
+  });
+
   // Prevent new windows
   mainWindow.webContents.setWindowOpenHandler(() => {
     return { action: 'deny' };

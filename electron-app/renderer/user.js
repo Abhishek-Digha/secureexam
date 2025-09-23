@@ -63,46 +63,68 @@ function createQuestionPalette() {
     return palette;
 }
 
-// Prevent cheating attempts
-//function preventCheating() {
-    // Disable right-click
-//     document.addEventListener('contextmenu', (e) => {
-//     e.preventDefault();
-//    });
-    
-//     // // Disable common keyboard shortcuts
-//     document.addEventListener('keydown', (e) => {
-//   const targetTag = e.target.tagName.toLowerCase();
-//   const isInputField = targetTag === 'input' || targetTag === 'textarea';
+//Prevent cheating attempts
+function preventCheating() {
+  // Disable right-click context menu everywhere
+  document.addEventListener('contextmenu', e => e.preventDefault());
 
-//   if (!isInputField) {
-//     if (
-//       e.key === 'F12' ||
-//       (e.ctrlKey && e.shiftKey && e.key === 'I') ||
-//       (e.ctrlKey && e.shiftKey && e.key === 'C') ||
-//       (e.ctrlKey && e.key === 'u') ||
-//       (e.ctrlKey && e.key === 'r') ||
-//       e.key === 'F5'
-//     ) {
-//       e.preventDefault();
-//       showCustomAlert('This action is not allowed during the exam');
-//     }
-//   }
-// });
+  // Disable copy, cut, paste except inside inputs and textareas
+  ['copy', 'cut', 'paste'].forEach(eventType => {
+    document.addEventListener(eventType, e => {
+      const tag = e.target.tagName.toLowerCase();
+      if (tag !== 'input' && tag !== 'textarea') {
+        e.preventDefault();
+      }
+    });
+  });
 
-//     // Detect tab switch
-//      document.addEventListener('visibilitychange', () => {
-//          if (document.hidden && currentSession) {
-//              showCustomAlert('Warning: Do not switch tabs during the exam!');
-//              // You could implement strike system here
-//          }
-//     });
-// }
+  // Disable common cheating shortcuts globally except in input/textarea
+  document.addEventListener('keydown', e => {
+    const tag = e.target.tagName.toLowerCase();
+    const isInput = (tag === 'input' || tag === 'textarea');
 
-// // Initialize cheating prevention when exam starts
-// document.addEventListener('DOMContentLoaded', () => {
-//     preventCheating();
-//});
+    if (!isInput) {
+      const key = e.key.toUpperCase();
+      const ctrlOrCmd = e.ctrlKey || e.metaKey;  // Ctrl (Win/Linux) OR Cmd (Mac)
+
+      // Block DevTools toggles: Ctrl+Shift+I/C or Cmd+Shift+I/C
+      if (ctrlOrCmd && e.shiftKey && (key === 'I' || key === 'C')) {
+        e.preventDefault();
+        showCustomAlert('This action is not allowed during the exam');
+      }
+
+      // Block view source: Ctrl+U or Cmd+U
+      if (ctrlOrCmd && key === 'U') {
+        e.preventDefault();
+        showCustomAlert('This action is not allowed during the exam');
+      }
+
+      // Block refresh: Ctrl+R, Cmd+R, F5
+      if (ctrlOrCmd && key === 'R' || key === 'F5') {
+        e.preventDefault();
+        showCustomAlert('This action is not allowed during the exam');
+      }
+
+      // Block common clipboard keys outside inputs: Ctrl/Cmd + C/V/X
+      if (ctrlOrCmd && ['C', 'V', 'X'].includes(key)) {
+        e.preventDefault();
+        showCustomAlert('This action is not allowed during the exam');
+      }
+
+      // Block F12 key globally (DevTools)
+      if (key === 'F12') {
+        e.preventDefault();
+        showCustomAlert('This action is not allowed during the exam');
+      }
+    }
+  });
+}
+
+
+// Initialize cheating prevention when exam starts
+document.addEventListener('DOMContentLoaded', () => {
+    preventCheating();
+});
 
 
 // Auto-save functionality

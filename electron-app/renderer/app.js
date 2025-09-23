@@ -95,10 +95,15 @@ document.getElementById('user-login-form').addEventListener('submit', async (e) 
             currentUser = response.user;
             currentSession = response.session;
 
-            const confirmed = await showExamInstructions();
-            if(confirmed)
-            await startExam();
-            
+             const confirmed = await showExamInstructions();
+             const cameraAvailable = await checkCameraAccess();
+              if (!cameraAvailable) {
+                // Stop exam start due to no camera access
+                return;
+              }
+
+              if(confirmed)
+              await startExam();    
         } else {
             showCustomAlert('Invalid session code or session not found');
         }
@@ -106,6 +111,20 @@ document.getElementById('user-login-form').addEventListener('submit', async (e) 
         showCustomAlert('Failed to join session');
     }
 });
+
+
+async function checkCameraAccess() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+    // Camera is available and permission granted
+    // You can display the stream to preview or just proceed
+    return true;
+  } catch (error) {
+    // Camera not accessible or permission denied
+    alert('Camera access is required to start the exam.');
+    return false;
+  }
+}
 
 async function startExam() {
   await electronAPI.enableSecureMode();
@@ -516,5 +535,29 @@ socket.on('session_terminated', (data) => {
     showUserLogin();
     showCustomAlert('Exam has been terminated by administrator (Exam Timeout or Unfair means during exam)');
     // Additional cleanup: stop timers, disconnect socket, redirect, etc.
+  }
+});
+
+
+document.getElementById('quit-btn').addEventListener('click', async () => {
+
+  if (currentUser.role !== 'user') {
+    // For admins, just quit without terminating any session
+    electronAPI.quitApp();
+    return;
+  }
+
+  try {
+    // Call your backend API to terminate the session (adjust URL & sessionId)
+    await fetch(`/api/sessions/${currentSession.id}/terminate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    });
+
+    // Now quit the Electron app via preload API
+    electronAPI.quitApp();
+  } catch (err) {
+    console.error('Failed to terminate session:', err);
+    alert('Failed to terminate exam session. Please try again.');
   }
 });
