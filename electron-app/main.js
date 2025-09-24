@@ -39,7 +39,6 @@ function createWindow() {
    mainWindow.on('blur', () => {
     if (isExamMode) {
       console.log('Window lost focus');
-      dialog.showErrorBox('Exam Terminated', 'Exam has been terminated due to security violation.');
       app.quit();
     }
   });
@@ -60,6 +59,7 @@ function createWindow() {
     }
   });
 }
+
 
 // --- SECURE MODE HANDLERS ---
 

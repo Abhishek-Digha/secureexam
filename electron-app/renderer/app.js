@@ -112,6 +112,18 @@ document.getElementById('user-login-form').addEventListener('submit', async (e) 
     }
 });
 
+function showCustomAlert(message) {
+  const modal = document.getElementById("custom-alert");
+  const msgBox = document.getElementById("alert-message");
+  const okBtn = document.getElementById("alert-ok-btn");
+
+  msgBox.innerText = message;
+  modal.style.display = "flex";
+
+  okBtn.onclick = () => {
+    modal.style.display = "none";
+  };
+}
 
 async function checkCameraAccess() {
   try {
@@ -121,7 +133,7 @@ async function checkCameraAccess() {
     return true;
   } catch (error) {
     // Camera not accessible or permission denied
-    alert('Camera access is required to start the exam.');
+    showCustomAlert('Camera access is required to start the exam.');
     return false;
   }
 }
