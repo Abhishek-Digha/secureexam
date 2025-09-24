@@ -347,3 +347,7 @@ input, select {
   max-height: 150px;
   overflow-y: auto;
 }
+
+#session-code {
+  text-transform: uppercase;
+}

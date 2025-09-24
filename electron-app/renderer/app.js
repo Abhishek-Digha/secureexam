@@ -1,4 +1,3 @@
- 
 const API_BASE = 'https://secureexam.onrender.com/api';
 //const socket = io('http://localhost:5000');
 const socket = io("https://secureexam.onrender.com", {
@@ -92,9 +91,12 @@ document.getElementById('user-login-form').addEventListener('submit', async (e) 
     try {
         const response = await apiCall('/auth/user-join', 'POST', { name, email, mobile, sessionCode });
         if (response.success) {
+            await electronAPI.enableSecureMode();
+            hideAllScreens();
             currentUser = response.user;
             currentSession = response.session;
-
+            // After session starts or sessionId is known:
+             window.electronAPI.send('set-session-id', currentSession.id);
              const confirmed = await showExamInstructions();
              const cameraAvailable = await checkCameraAccess();
               if (!cameraAvailable) {
@@ -108,6 +110,7 @@ document.getElementById('user-login-form').addEventListener('submit', async (e) 
             showCustomAlert('Invalid session code or session not found');
         }
     } catch (error) {
+        console.error(error);
         showCustomAlert('Failed to join session');
     }
 });
@@ -126,22 +129,36 @@ function showCustomAlert(message) {
 }
 
 async function checkCameraAccess() {
+  // First, check the permission state for camera
+  if (navigator.permissions) {
+    try {
+      const permission = await navigator.permissions.query({ name: 'camera' });
+      if (permission.state === 'denied') {
+        showCustomAlert('Camera access denied. Please enable camera permission in your system settings, then retry.');
+        return false;
+      }
+      // If 'granted', proceed to request stream; if 'prompt', continue to request
+    } catch (permError) {
+      // Ignore, fallback to try getUserMedia
+    }
+  }
+
+  // Try to get camera access -- will trigger permission prompt if not yet granted/denied
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-    // Camera is available and permission granted
-    // You can display the stream to preview or just proceed
+    // Camera permission granted and accessible!
+    // Optionally preview the stream here
     return true;
   } catch (error) {
-    // Camera not accessible or permission denied
-    showCustomAlert('Camera access is required to start the exam.');
+    // Camera not accessible or denied
+    showCustomAlert('Camera access is required to start the exam. Please accept the permission prompt or enable camera in your OS settings and retry.');
     return false;
   }
 }
 
-async function startExam() {
-  await electronAPI.enableSecureMode();
 
-  hideAllScreens();
+async function startExam() {
+
   document.getElementById('exam-screen').classList.add('active');
 
   // Start camera for live feed
@@ -570,3 +587,19 @@ document.getElementById('quit-btn').addEventListener('click', async () => {
   }
 });
 
+
+window.addEventListener('beforeunload', (e) => {
+  if (isExamMode) {
+   
+  try {
+    fetch(`/api/sessions/${currentSession.id}/terminate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    console.info('terminated session:');
+  } catch (err) {
+    console.error('Failed to terminate session:', err);
+    alert('Failed to terminate exam session. Please try again.');
+  }
+  }
+});

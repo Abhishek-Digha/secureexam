@@ -124,14 +124,33 @@
           <input type="text" id="user-name" placeholder="Full Name" required />
           <input type="email" id="user-email" placeholder="Email" required />
           <input type="tel" id="user-mobile" placeholder="Mobile Number" required pattern="[0-9]{10}" title="Please enter a valid 10-digit mobile number" />
-          <input type="text" id="session-code" placeholder="Session Code" required />
+          <input type="text" id="session-code" placeholder="Session Code" required maxlength="6" />
          <div style="display:flex; justify-content:center; margin-top:15px;">
           <button type="submit" class="btn btn-primary">Join Exam</button>
          </div>
           <!-- <button type="button" onclick="showMainScreen()" class="btn btn-secondary">Back</button> -->
         </form>
       </div>
+    <div style="text-align: center; border: 2px solid #007bff; padding: 20px; border-radius: 8px; max-width: 600px; margin: 0 auto; background: rgba(255, 255, 255, 0.1);">
+        <h2>Exam Instructions</h2>
+        <p>Please read the following instructions carefully before starting the exam:</p>
+        <ul style="display: inline-block; text-align: left; margin: 0 auto;">
+        <li>Do not switch applications or minimize the window</li>
+        <li>Do not exit fullscreen mode</li>
+        <li>Do not change the screen focus else exam will be terminated</li>
+        <li>Your camera will be monitored throughout the exam</li>
+        <li>The exam will be terminated if multiple screen found</li>
+        <li>Answer all questions before submitting</li>
+        <li>You cannot go back after submission</li>
+        <li>The exam will auto-submit when time expires</li>
+        </ul>
+      </div>
+
     </div>
+     
+          
+       
+     
 
     <!-- Admin dashboard -->
     <div id="admin-dashboard" class="screen">
@@ -328,6 +347,7 @@
         <li>Do not exit fullscreen mode</li>
         <li>Do not change the screen focus else exam will be terminated</li>
         <li>Your camera will be monitored throughout the exam</li>
+        <li>The exam will be terminated if multiple screen found</li>
         <li>Answer all questions before submitting</li>
         <li>You cannot go back after submission</li>
         <li>The exam will auto-submit when time expires</li>

@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, shell, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, shell, dialog, screen } = require('electron');
 const path = require('path');
 const { exec } = require('child_process');
 const os = require('os');
@@ -6,10 +6,25 @@ const os = require('os');
 let mainWindow;
 let isExamMode = false;
 
+let currentSessionId = null;
+
+ipcMain.on('set-session-id', (event, sessionId) => {
+  currentSessionId = sessionId;
+  console.log('Session ID set in main process:', currentSessionId);
+});
+
 const userDataPath = path.join(os.homedir(), 'SecureExamPortal');
 app.setPath('userData', userDataPath);
 
 app.disableHardwareAcceleration();
+
+function checkMultipleScreens() {
+  const displays = screen.getAllDisplays();
+  if (displays.length > 1 && isExamMode) {
+    console.log(`Multiple screens detected (${displays.length}). Stopping exam.`);
+     app.quit();
+  }
+}
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -36,13 +51,52 @@ function createWindow() {
     mainWindow.show();
   });
 
-   mainWindow.on('blur', () => {
-    if (isExamMode) {
-      console.log('Window lost focus');
-      app.quit();
-    }
+
+  
+  // // Close DevTools if already opened
+  // if (mainWindow.webContents.isDevToolsOpened()) {
+  //     mainWindow.webContents.closeDevTools();
+  // }
+
+  // Block opening DevTools via shortcuts
+  mainWindow.webContents.on('before-input-event', (event, input) => {
+
+      if (
+        input.key === 'F12' || 
+        (input.control && input.shift && input.key.toLowerCase() === 'i')
+      ) {
+        event.preventDefault();
+      }
+  });
+   // Check initially on app ready
+  checkMultipleScreens();
+
+  // Listen for display changes dynamically
+  screen.on('display-added', () => {
+     if (isExamMode) {
+    console.log('Display added');
+    checkMultipleScreens();
+     }
   });
 
+  screen.on('display-removed', () => {
+     if (isExamMode) {
+    console.log('Display removed');
+    checkMultipleScreens();
+     }
+  });
+
+   mainWindow.on('blur', async () => {
+  if (isExamMode) {
+    console.log('Window lost focus - terminating session');
+    try {
+      await terminateSession(currentSessionId);
+    } catch (err) {
+      console.error('Error terminating session:', err);
+    }
+    app.quit();
+  }
+});
   mainWindow.on('closed', () => {
     mainWindow = null;
   });
@@ -60,6 +114,26 @@ function createWindow() {
   });
 }
 
+
+const fetch = require('node-fetch'); // install with `npm i node-fetch` if not installed
+
+async function terminateSession(sessionId) {
+  try {
+    const response = await fetch(`https://secureexam.onrender.com/api/admin/sessions/${sessionId}/terminate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+    if (!response.ok) {
+      // Optionally log full response body (may be HTML)
+      const text = await response.text();
+      console.error(`HTTP error ${response.status}:`, text);
+      throw new Error(`Failed to terminate session: ${response.status}`);
+    }
+  } catch (error) {
+    console.error('Error terminating session:', error);
+  }
+}
 
 // --- SECURE MODE HANDLERS ---
 
