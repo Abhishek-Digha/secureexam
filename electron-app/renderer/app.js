@@ -39,7 +39,7 @@ function hideAllScreens() {
 function logout() {
     currentUser = null;
     currentSession = null;
-    electronAPI.disableSecureMode();
+    //electronAPI.disableSecureMode();
     showUserLogin();
 }
 
@@ -545,7 +545,7 @@ async function autoSubmitExam() {
       }
 
       showCustomAlert('Exam submitted successfully!');
-      await electronAPI.disableSecureMode();
+      //await electronAPI.disableSecureMode();
       showUserLogin();
       electronAPI.quitApp();
 
