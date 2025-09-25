@@ -102,11 +102,12 @@ document.getElementById('user-login-form').addEventListener('submit', async (e) 
             console.log('join session:', currentSession);
              window.electronAPI.send('set-session-id', currentSession.id);
               const confirmed = await showExamInstructions();
-              if(confirmed)
+              if(confirmed){
               await electronAPI.enableSecureMode();  
-              await startExam();    
-              else
-              showUserLogin();
+              await startExam();  
+              } else {
+                showUserLogin();
+              }  
         } else {
             showCustomAlert('Invalid session code or session not found');
         }
@@ -151,7 +152,6 @@ function showCustomConfirm(message) {
     };
   });
 }
-
 
 async function checkCameraAccess() {
   // First, check the permission state for camera
@@ -593,7 +593,7 @@ socket.on('session_terminated', (data) => {
 });
 
 document.getElementById('quit-btn').addEventListener('click', async () => {
-  
+
 if (!currentUser || currentUser.role === 'admin') {
      console.log('App Quit');
      electronAPI.quitApp();
@@ -619,6 +619,7 @@ else
   console.log('terminated session:2');
    electronAPI.quitApp();
 });
+
 
 
 window.addEventListener('beforeunload', (e) => {

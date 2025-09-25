@@ -86,8 +86,6 @@ function createWindow() {
      }
   });
 
- let popupOpen = false;
-
   mainWindow.on('blur', async () => {
   if (isExamMode && !popupOpen) {
     console.log('Window lost focus - terminating session');
