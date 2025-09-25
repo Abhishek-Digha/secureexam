@@ -80,7 +80,8 @@ router.post('/user-join', async (req, res) => {
             session: {
                 id: session._id,
                 name: session.name,
-                duration: session.duration
+                duration: session.duration,
+                status: session.status
             }
         });
     } catch (error) {
