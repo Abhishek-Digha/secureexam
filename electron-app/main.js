@@ -54,9 +54,9 @@ function createWindow() {
 
   
   // // Close DevTools if already opened
-  // if (mainWindow.webContents.isDevToolsOpened()) {
-  //     mainWindow.webContents.closeDevTools();
-  // }
+  if (mainWindow.webContents.isDevToolsOpened()) {
+      mainWindow.webContents.closeDevTools();
+  }
 
   // Block opening DevTools via shortcuts
   mainWindow.webContents.on('before-input-event', (event, input) => {
@@ -86,8 +86,10 @@ function createWindow() {
      }
   });
 
-   mainWindow.on('blur', async () => {
-  if (isExamMode) {
+ let popupOpen = false;
+
+  mainWindow.on('blur', async () => {
+  if (isExamMode && !popupOpen) {
     console.log('Window lost focus - terminating session');
     try {
       await terminateSession(currentSessionId);

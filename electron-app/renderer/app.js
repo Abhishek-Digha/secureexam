@@ -96,6 +96,7 @@ document.getElementById('user-login-form').addEventListener('submit', async (e) 
             currentUser = response.user;
             currentSession = response.session;
             // After session starts or sessionId is known:
+            console.log('join session:', currentSession);
              window.electronAPI.send('set-session-id', currentSession.id);
              const confirmed = await showExamInstructions();
              const cameraAvailable = await checkCameraAccess();
@@ -106,6 +107,8 @@ document.getElementById('user-login-form').addEventListener('submit', async (e) 
 
               if(confirmed)
               await startExam();    
+              else
+              showUserLogin();
         } else {
             showCustomAlert('Invalid session code or session not found');
         }
@@ -127,6 +130,30 @@ function showCustomAlert(message) {
     modal.style.display = "none";
   };
 }
+
+
+function showCustomConfirm(message) {
+  return new Promise((resolve) => {
+    const modal = document.getElementById("custom-confirm");
+    const msgBox = document.getElementById("confirm-message");
+    const yesBtn = document.getElementById("confirm-yes");
+    const noBtn = document.getElementById("confirm-no");
+
+    msgBox.innerText = message;
+    modal.style.display = "flex";
+
+    yesBtn.onclick = () => {
+      modal.style.display = "none";
+      resolve(true);
+    };
+
+    noBtn.onclick = () => {
+      modal.style.display = "none";
+      resolve(false);
+    };
+  });
+}
+
 
 async function checkCameraAccess() {
   // First, check the permission state for camera
@@ -465,8 +492,8 @@ async function submitExam() {
 
   // Save current answer before submitting
   //saveCurrentAnswer();
-
-  if (confirm('Are you sure you want to submit the exam?')) {
+   const confirmed = await showCustomConfirm("Are you sure you want to submit the exam?");
+  if (confirmed) {
     try {
       await apiCall('/user/submit-exam', 'POST', {
         sessionId: currentSession.id,
@@ -568,23 +595,31 @@ socket.on('session_terminated', (data) => {
 });
 
 document.getElementById('quit-btn').addEventListener('click', async () => {
-  if (!currentUser || currentUser.role !== 'user') {
-    // If no currentUser or not user role, quit app directly
-    electronAPI.quitApp();
-    return;
+  
+if (!currentUser || currentUser.role === 'admin') {
+     console.log('App Quit');
+     electronAPI.quitApp();
   }
-
+  else if (currentSession.status === 'active') {
+    // If no currentUser or not user role, quit app directly
+    console.log('terminated session:1');
+    console.log('Quitting app and terminating session:', currentSession.id);
   try {
-    await fetch(`/api/sessions/${currentSession.id}/terminate`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' }
-    });
+    
+    await apiCall(`/admin/sessions/${currentSession.id}/terminate`, 'POST');
+    
+    //electronAPI.quitApp();
   } catch (err) {
-    console.error('Failed to terminate session:', err);
-    alert('Failed to terminate exam session. Please try again.');
+    console.log('Failed to terminate session:', err);
+    showCustomAlert('Failed to terminate exam session. Please try again.');
+    //electronAPI.quitApp();
   } finally {
     electronAPI.quitApp();
   }
+}
+else
+  console.log('terminated session:2');
+   electronAPI.quitApp();
 });
 
 
@@ -599,7 +634,7 @@ window.addEventListener('beforeunload', (e) => {
     console.info('terminated session:');
   } catch (err) {
     console.error('Failed to terminate session:', err);
-    alert('Failed to terminate exam session. Please try again.');
+    showCustomAlert('Failed to terminate exam session. Please try again.');
   }
   }
 });

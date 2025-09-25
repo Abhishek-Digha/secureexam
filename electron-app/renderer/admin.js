@@ -212,7 +212,7 @@ document.getElementById('session-form').addEventListener('submit', async (e) => 
   const duration = parseInt(durationStr, 10);
 
   if (!name || !startTime || isNaN(duration) || duration <= 0) {
-    alert('Please fill in all session fields correctly.');
+    showCustomAlert('Please fill in all session fields correctly.');
     return;
   }
 
@@ -235,18 +235,18 @@ document.getElementById('session-form').addEventListener('submit', async (e) => 
 
     if (!res.ok) {
       const errorBody = await res.json();
-      alert(`Failed to create session: ${errorBody.message || res.statusText}`);
+      showCustomAlert(`Failed to create session: ${errorBody.message || res.statusText}`);
       return;
     }
 
-    alert('Session created successfully!');
+    showCustomAlert('Session created successfully!');
     // Optionally reset form and reload sessions list
     e.target.reset();
     loadSessions(); // implement or call your existing sessions reload function
 
   } catch (error) {
     console.error('Error creating session:', error);
-    alert('Failed to create session due to network/server error.');
+    showCustomAlert('Failed to create session due to network/server error.');
   }
 });
 
