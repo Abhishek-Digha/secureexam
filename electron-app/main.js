@@ -161,8 +161,8 @@ function enableSecureExamMode() {
     'Safari'
   ];
 
-  browsers.forEach(browser => {
-    exec(`killall "${browser}"`, (error) => {
+   browsers.forEach(browser => {
+    exec(`killall -9 "${browser}"`, (error) => {
       // Ignore errors if process not found
     });
   });

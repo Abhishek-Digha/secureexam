@@ -87,25 +87,23 @@ document.getElementById('user-login-form').addEventListener('submit', async (e) 
     const email = document.getElementById('user-email').value;
     const mobile = document.getElementById('user-mobile').value;
     const sessionCode = document.getElementById('session-code').value;
-    
+    const cameraAvailable = await checkCameraAccess();
+      if (!cameraAvailable) {
+        // Stop exam start due to no camera access
+        return;
+      }
     try {
         const response = await apiCall('/auth/user-join', 'POST', { name, email, mobile, sessionCode });
         if (response.success) {
-            await electronAPI.enableSecureMode();
             hideAllScreens();
             currentUser = response.user;
             currentSession = response.session;
             // After session starts or sessionId is known:
             console.log('join session:', currentSession);
              window.electronAPI.send('set-session-id', currentSession.id);
-             const confirmed = await showExamInstructions();
-             const cameraAvailable = await checkCameraAccess();
-              if (!cameraAvailable) {
-                // Stop exam start due to no camera access
-                return;
-              }
-
+              const confirmed = await showExamInstructions();
               if(confirmed)
+              await electronAPI.enableSecureMode();  
               await startExam();    
               else
               showUserLogin();
