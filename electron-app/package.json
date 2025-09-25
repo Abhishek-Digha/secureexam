@@ -1,11 +1,127 @@
- 
 {
   "name": "secure-exam-portal",
   "version": "1.0.0",
+  "description": "Secure Exam Portal - Electron Application",
   "main": "main.js",
+  "author": "AbhiGupta",
+  "license": "MIT",
+  "homepage": "https://github.com/yourusername/secure-exam-portal#readme",
   "scripts": {
     "start": "electron .",
-    "build": "electron-builder"
+    "dev": "electron . --inspect=9229",
+    "build": "electron-builder",
+    "build-win": "electron-builder --win",
+    "build-mac": "electron-builder --mac",
+    "build-linux": "electron-builder --linux",
+    "build-portable": "electron-builder --win portable --mac dmg --linux AppImage",
+    "build-win-portable": "electron-builder --win portable",
+    "build-mac-portable": "electron-builder --mac dmg",
+    "build-linux-portable": "electron-builder --linux AppImage",
+    "build-all": "electron-builder --win --mac --linux",
+    "dist": "npm run build-portable",
+    "pack": "electron-builder --dir",
+    "postinstall": "electron-builder install-app-deps",
+    "build-mac-signed": "electron-builder --mac && codesign --force --deep --sign - 'dist/mac-arm64/Secure Exam Portal.app'"
+  },
+  "build": {
+    "appId": "com.abhigupta.secure-exam-portal",
+    "productName": "Secure Exam Portal",
+    "copyright": "Copyright © 2025 abhigupta",
+    "directories": {
+      "output": "dist",
+      "buildResources": "assets"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64", "ia32"]
+        },
+        {
+          "target": "portable",
+          "arch": ["x64", "ia32"]
+        },
+        {
+          "target": "zip",
+          "arch": ["x64", "ia32"]
+        }
+      ],
+      "requestedExecutionLevel": "asInvoker",
+      "artifactName": "${productName}-${version}-${os}-${arch}.${ext}"
+    },
+    "portable": {
+      "artifactName": "${productName}-${version}-portable.${ext}",
+      "requestExecutionLevel": "user",
+      "unpackDirName": "${productName}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowElevation": true,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "${productName}",
+      "artifactName": "${productName}-${version}-setup.${ext}"
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["x64", "arm64"]
+        },
+        {
+          "target": "zip",
+          "arch": ["x64", "arm64"]
+        }
+      ],
+      "category": "public.app-category.education",
+      "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
+      "hardenedRuntime": false,
+      "gatekeeperAssess": false
+    },
+    "dmg": {
+      "artifactName": "${productName}-${version}-${os}.${ext}"
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": ["x64", "arm64"]
+        },
+        {
+          "target": "deb",
+          "arch": ["x64", "arm64"]
+        },
+        {
+          "target": "rpm",
+          "arch": ["x64"]
+        },
+        {
+          "target": "tar.gz",
+          "arch": ["x64", "arm64"]
+        }
+      ],
+      "category": "Education",
+      "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
+      "desktop": {
+        "Name": "Secure Exam Portal",
+        "Comment": "Secure examination platform",
+        "Categories": "Education;Office;"
+      }
+    },
+    "appImage": {
+      "artifactName": "${productName}-${version}-${os}-${arch}.${ext}"
+    },
+    "deb": {
+      "priority": "optional",
+      "artifactName": "${productName}-${version}-${os}-${arch}.${ext}"
+    },
+    "rpm": {
+      "artifactName": "${productName}-${version}-${os}-${arch}.${ext}"
+    },
+    "compression": "maximum",
+    "includePdb": false,
+    "removePackageScripts": true
   },
   "devDependencies": {
     "electron": "^26.0.0",
@@ -13,6 +129,7 @@
   },
   "dependencies": {
     "axios": "^1.5.0",
+    "node-fetch": "^2.6.7",
     "socket.io-client": "^4.7.0"
   }
 }
